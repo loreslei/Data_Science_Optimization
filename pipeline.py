@@ -3,6 +3,64 @@ import joblib
 import numpy as np
 import os
 from sklearn.metrics import mean_squared_log_error
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+# ====================================================================
+# 1. FUNÇÕES DE PRÉ-PROCESSAMENTO (Para uso no Notebook e no Pipeline)
+# ====================================================================
+
+def limpar_dados(df, cols_to_drop):
+    """
+    Remove colunas indesejadas identificadas na Análise Exploratória.
+    Essa função será importada no notebook para garantir consistência.
+    """
+    
+    # Mantém apenas as colunas que realmente existem no DataFrame atual (evita erros no teste)
+    cols_to_drop = [col for col in cols_to_drop if col in df.columns]
+    
+    return df.drop(columns=cols_to_drop)
+
+def criar_pre_processador(num_features, cat_features):
+    """
+    Constrói e retorna o ColumnTransformer com as regras de imputação,
+    escalonamento e encoding para evitar Data Leakage.
+    """
+    
+    colunas_de_ausencia_conhecidas = [
+        'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2',
+        'GarageType', 'GarageFinish', 'GarageQual', 'GarageCond'
+    ]
+    
+    # 2. O pipeline divide a lista que veio do notebook automaticamente
+    cat_ausencia = [col for col in cat_features if col in colunas_de_ausencia_conhecidas]
+    cat_erro = [col for col in cat_features if col not in colunas_de_ausencia_conhecidas]
+  
+    num_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+    
+    ausencia_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='constant', fill_value='NA')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
+
+    erro_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
+    
+    
+    preprocessor = ColumnTransformer(transformers=[
+        ('num', num_transformer, num_features),
+        ('cat_ausencia', ausencia_transformer, cat_ausencia),
+        ('cat_erro', erro_transformer, cat_erro)
+    ])
+    
+    return preprocessor
 
 def prever_precos(caminho_arquivo_teste):
     """
@@ -22,12 +80,19 @@ def prever_precos(caminho_arquivo_teste):
     # Selecionar apenas colunas numéricas
     X = df_teste.select_dtypes(include=[np.number])
     
+    
+    cols_to_drop_2 = ['MasVnrArea', 'BsmtFinSF2', 'BsmtUnfSF', 'LowQualFinSF', 'BsmtHalfBath', 'HalfBath', 'BedroomAbvGr','KitchenAbvGr','GarageYrBlt','GarageArea','OpenPorchSF','MiscVal','MoSold','YrSold']
+    cols_to_drop = ['Alley', 'MasVnrType', 'FireplaceQu', 'PoolQC', 'Fence', 'MiscFeature']
+    
+    df_teste = limpar_dados(df_teste, cols_to_drop)
+    df_teste = limpar_dados(df_teste, cols_to_drop_2)
+    
     # Remover coluna Id se ela estiver presente
     if 'Id' in X.columns:
         X = X.drop(columns=['Id'])
         
-    # Preencher valores nulos com 0
-    X = X.fillna(0)
+    # # Preencher valores nulos com 0
+    # X = X.fillna(0)
 
     # 3. Carregamento do modelo
     caminho_modelo = 'modelo_baseline.joblib'
@@ -37,8 +102,8 @@ def prever_precos(caminho_arquivo_teste):
     modelo = joblib.load(caminho_modelo)
 
     # 4. Alinhamento de colunas (Garante consistência com o treino)
-    if hasattr(modelo, 'feature_names_in_'):
-        X = X.reindex(columns=modelo.feature_names_in_, fill_value=0)
+    # if hasattr(modelo, 'feature_names_in_'):
+    #     X = X.reindex(columns=modelo.feature_names_in_, fill_value=0)
 
     # 5. Predição
     predicoes = modelo.predict(X)
@@ -46,12 +111,26 @@ def prever_precos(caminho_arquivo_teste):
     # 6. Pós-processamento
     # Garante valores >= 0 para evitar erro no cálculo do RMSLE
     predicoes_finais = np.clip(predicoes, a_min=0, a_max=None)
+    
+    
+    ### Sugestão
+    # # 4. Predição
+    # # O pipeline do Scikit-Learn aplica automaticamente a imputação, o scaler e o encoding
+    # predicoes_em_log = modelo_pipeline.predict(df_teste)
+
+    # # 5. Pós-processamento
+    # # O modelo foi treinado com o alvo em log (np.log1p). 
+    # # Precisamos converter de volta para Dólares usando a função exponencial.
+    # predicoes_em_dolar = np.expm1(predicoes_em_log)
+    
+    # # Garante valores >= 0 para evitar qualquer risco na métrica RMSLE
+    # predicoes_finais = np.clip(predicoes_em_dolar, a_min=0, a_max=None)
 
     return predicoes_finais
 
 if __name__ == "__main__":
     # Bloco de teste local para o aluno
-    arquivo_teste_exemplo = 'teste_publico.csv'
+    arquivo_teste_exemplo = './datasets/teste_publico.csv'
     
     print(f"--- Executando Validação Local do Pipeline ---")
     
