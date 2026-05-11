@@ -11,6 +11,124 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 # ====================================================================
 # 1. FUNÇÕES DE PRÉ-PROCESSAMENTO (Para uso no Notebook e no Pipeline)
 # ====================================================================
+import numpy as np
+import pandas as pd
+import os
+import joblib
+
+# ---------------------------------------------------------
+# 1. Regressão Linear Simples
+# ---------------------------------------------------------
+def prever_precos_regressao_linear(df_limpo):
+    """Predição usando modelo de Regressão Linear Simples a partir de um DataFrame limpo."""
+    X = df_limpo.select_dtypes(include=[np.number])
+    if 'Id' in X.columns:
+        X = X.drop(columns=['Id'])
+
+    caminho_modelo = 'modelo_regressao_linear.joblib'
+    if not os.path.exists(caminho_modelo):
+        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
+        
+    modelo = joblib.load(caminho_modelo)
+    
+    predicoes_em_log = modelo.predict(X)
+    predicoes_em_dolar = np.expm1(predicoes_em_log)
+    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
+
+# ---------------------------------------------------------
+# 2. Árvores de Decisão
+# ---------------------------------------------------------
+def prever_precos_arvore_decisao(df_limpo):
+    """Predição usando modelo de Árvore de Decisão a partir de um DataFrame limpo."""
+    X = df_limpo.select_dtypes(include=[np.number])
+    if 'Id' in X.columns:
+        X = X.drop(columns=['Id'])
+
+    caminho_modelo = 'modelo_arvore_decisao.joblib'
+    if not os.path.exists(caminho_modelo):
+        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
+        
+    modelo = joblib.load(caminho_modelo)
+    
+    predicoes_em_log = modelo.predict(X)
+    predicoes_em_dolar = np.expm1(predicoes_em_log)
+    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
+
+# ---------------------------------------------------------
+# 3. Floresta Aleatória (Random Forest)
+# ---------------------------------------------------------
+def prever_precos_floresta_aleatoria(df_limpo):
+    """Predição usando modelo de Floresta Aleatória a partir de um DataFrame limpo."""
+    X = df_limpo.select_dtypes(include=[np.number])
+    if 'Id' in X.columns:
+        X = X.drop(columns=['Id'])
+
+    caminho_modelo = 'modelo_floresta_aleatoria.joblib'
+    if not os.path.exists(caminho_modelo):
+        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
+        
+    modelo = joblib.load(caminho_modelo)
+    
+    predicoes_em_log = modelo.predict(X)
+    predicoes_em_dolar = np.expm1(predicoes_em_log)
+    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
+
+# ---------------------------------------------------------
+# 4. KNN (K-Nearest Neighbors)
+# ---------------------------------------------------------
+def prever_precos_knn(df_limpo):
+    """Predição usando modelo KNN a partir de um DataFrame limpo."""
+    X = df_limpo.select_dtypes(include=[np.number])
+    if 'Id' in X.columns:
+        X = X.drop(columns=['Id'])
+
+    caminho_modelo = 'modelo_knn.joblib'
+    if not os.path.exists(caminho_modelo):
+        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
+        
+    modelo = joblib.load(caminho_modelo)
+    
+    predicoes_em_log = modelo.predict(X)
+    predicoes_em_dolar = np.expm1(predicoes_em_log)
+    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
+
+# ---------------------------------------------------------
+# 5. SVM (Support Vector Machine - SVR)
+# ---------------------------------------------------------
+def prever_precos_svm(df_limpo):
+    """Predição usando modelo SVM a partir de um DataFrame limpo."""
+    X = df_limpo.select_dtypes(include=[np.number])
+    if 'Id' in X.columns:
+        X = X.drop(columns=['Id'])
+
+    caminho_modelo = 'modelo_svm.joblib'
+    if not os.path.exists(caminho_modelo):
+        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
+        
+    modelo = joblib.load(caminho_modelo)
+    
+    predicoes_em_log = modelo.predict(X)
+    predicoes_em_dolar = np.expm1(predicoes_em_log)
+    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
+
+# ---------------------------------------------------------
+# 6. Aprendizado Ensemble (Gradient Boosting, Stacking, etc.)
+# ---------------------------------------------------------
+def prever_precos_ensemble(df_limpo):
+    """Predição usando modelo Ensemble a partir de um DataFrame limpo."""
+    X = df_limpo.select_dtypes(include=[np.number])
+    if 'Id' in X.columns:
+        X = X.drop(columns=['Id'])
+
+    caminho_modelo = 'modelo_ensemble.joblib'
+    if not os.path.exists(caminho_modelo):
+        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
+        
+    modelo = joblib.load(caminho_modelo)
+    
+    predicoes_em_log = modelo.predict(X)
+    predicoes_em_dolar = np.expm1(predicoes_em_log)
+    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
 
 def limpar_dados(df, cols_to_drop):
     """
