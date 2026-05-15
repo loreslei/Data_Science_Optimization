@@ -3,182 +3,6 @@ import joblib
 import numpy as np
 import os
 from sklearn.metrics import mean_squared_log_error
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-
-# ====================================================================
-# 1. FUNÇÕES DE PRÉ-PROCESSAMENTO (Para uso no Notebook e no Pipeline)
-# ====================================================================
-import numpy as np
-import pandas as pd
-import os
-import joblib
-
-# ---------------------------------------------------------
-# 1. Regressão Linear Simples
-# ---------------------------------------------------------
-def prever_precos_regressao_linear(df_limpo):
-    """Predição usando modelo de Regressão Linear Simples a partir de um DataFrame limpo."""
-    X = df_limpo.select_dtypes(include=[np.number])
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
-
-    caminho_modelo = 'modelo_regressao_linear.joblib'
-    if not os.path.exists(caminho_modelo):
-        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
-        
-    modelo = joblib.load(caminho_modelo)
-    
-    predicoes_em_log = modelo.predict(X)
-    predicoes_em_dolar = np.expm1(predicoes_em_log)
-    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
-
-# ---------------------------------------------------------
-# 2. Árvores de Decisão
-# ---------------------------------------------------------
-def prever_precos_arvore_decisao(df_limpo):
-    """Predição usando modelo de Árvore de Decisão a partir de um DataFrame limpo."""
-    X = df_limpo.select_dtypes(include=[np.number])
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
-
-    caminho_modelo = 'modelo_arvore_decisao.joblib'
-    if not os.path.exists(caminho_modelo):
-        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
-        
-    modelo = joblib.load(caminho_modelo)
-    
-    predicoes_em_log = modelo.predict(X)
-    predicoes_em_dolar = np.expm1(predicoes_em_log)
-    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
-
-# ---------------------------------------------------------
-# 3. Floresta Aleatória (Random Forest)
-# ---------------------------------------------------------
-def prever_precos_floresta_aleatoria(df_limpo):
-    """Predição usando modelo de Floresta Aleatória a partir de um DataFrame limpo."""
-    X = df_limpo.select_dtypes(include=[np.number])
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
-
-    caminho_modelo = 'modelo_floresta_aleatoria.joblib'
-    if not os.path.exists(caminho_modelo):
-        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
-        
-    modelo = joblib.load(caminho_modelo)
-    
-    predicoes_em_log = modelo.predict(X)
-    predicoes_em_dolar = np.expm1(predicoes_em_log)
-    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
-
-# ---------------------------------------------------------
-# 4. KNN (K-Nearest Neighbors)
-# ---------------------------------------------------------
-def prever_precos_knn(df_limpo):
-    """Predição usando modelo KNN a partir de um DataFrame limpo."""
-    X = df_limpo.select_dtypes(include=[np.number])
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
-
-    caminho_modelo = 'modelo_knn.joblib'
-    if not os.path.exists(caminho_modelo):
-        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
-        
-    modelo = joblib.load(caminho_modelo)
-    
-    predicoes_em_log = modelo.predict(X)
-    predicoes_em_dolar = np.expm1(predicoes_em_log)
-    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
-
-# ---------------------------------------------------------
-# 5. SVM (Support Vector Machine - SVR)
-# ---------------------------------------------------------
-def prever_precos_svm(df_limpo):
-    """Predição usando modelo SVM a partir de um DataFrame limpo."""
-    X = df_limpo.select_dtypes(include=[np.number])
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
-
-    caminho_modelo = 'modelo_svm.joblib'
-    if not os.path.exists(caminho_modelo):
-        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
-        
-    modelo = joblib.load(caminho_modelo)
-    
-    predicoes_em_log = modelo.predict(X)
-    predicoes_em_dolar = np.expm1(predicoes_em_log)
-    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
-
-# ---------------------------------------------------------
-# 6. Aprendizado Ensemble (Gradient Boosting, Stacking, etc.)
-# ---------------------------------------------------------
-def prever_precos_ensemble(df_limpo):
-    """Predição usando modelo Ensemble a partir de um DataFrame limpo."""
-    X = df_limpo.select_dtypes(include=[np.number])
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
-
-    caminho_modelo = 'modelo_ensemble.joblib'
-    if not os.path.exists(caminho_modelo):
-        raise FileNotFoundError(f"Arquivo '{caminho_modelo}' não encontrado.")
-        
-    modelo = joblib.load(caminho_modelo)
-    
-    predicoes_em_log = modelo.predict(X)
-    predicoes_em_dolar = np.expm1(predicoes_em_log)
-    return np.clip(predicoes_em_dolar, a_min=0, a_max=None)
-
-def limpar_dados(df, cols_to_drop):
-    """
-    Remove colunas indesejadas identificadas na Análise Exploratória.
-    Essa função será importada no notebook para garantir consistência.
-    """
-    
-    # Mantém apenas as colunas que realmente existem no DataFrame atual (evita erros no teste)
-    cols_to_drop = [col for col in cols_to_drop if col in df.columns]
-    
-    return df.drop(columns=cols_to_drop)
-
-def criar_pre_processador(num_features, cat_features):
-    """
-    Constrói e retorna o ColumnTransformer com as regras de imputação,
-    escalonamento e encoding para evitar Data Leakage.
-    """
-    
-    colunas_de_ausencia_conhecidas = [
-        'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2',
-        'GarageType', 'GarageFinish', 'GarageQual', 'GarageCond'
-    ]
-    
-    # 2. O pipeline divide a lista que veio do notebook automaticamente
-    cat_ausencia = [col for col in cat_features if col in colunas_de_ausencia_conhecidas]
-    cat_erro = [col for col in cat_features if col not in colunas_de_ausencia_conhecidas]
-  
-    num_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())
-    ])
-    
-    ausencia_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='NA')),
-    ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
-
-    erro_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
-    
-    
-    preprocessor = ColumnTransformer(transformers=[
-        ('num', num_transformer, num_features),
-        ('cat_ausencia', ausencia_transformer, cat_ausencia),
-        ('cat_erro', erro_transformer, cat_erro)
-    ])
-    
-    return preprocessor
 
 def prever_precos(caminho_arquivo_teste):
     """
@@ -193,61 +17,145 @@ def prever_precos(caminho_arquivo_teste):
     """
     # 1. Leitura dos dados de teste
     df_teste = pd.read_csv(caminho_arquivo_teste)
+    
+    df_teste['Idade_Casa'] = df_teste['YrSold'] - df_teste['YearBuilt']
+    
+    
+    COLUNAS_PARA_EXCLUIR = ['Id']
+
+    # Preenchimento de categóricas onde o valor "NA" não é erro, mas sim a ausência do item (ex: Sem Garagem)
+    PREENCHIMENTO_CATEGORICAS_CONHECIDAS = {
+        'Alley': 'No alley access', 'BsmtQual': 'No Basement', 'BsmtCond': 'No Basement',
+        'BsmtExposure': 'No Basement', 'BsmtFinType1': 'No Basement', 'BsmtFinType2': 'No Basement',
+        'FireplaceQu': 'No Fireplace', 'GarageType': 'No Garage', 'GarageFinish': 'No Garage',
+        'GarageQual': 'No Garage', 'GarageCond': 'No Garage', 'PoolQC': 'No Pool',
+        'Fence': 'No Fence', 'MiscFeature': 'None', 'MasVnrType':'None'
+    }
+    
+    
+    df_limpo = df_teste.copy()
+
+    # Remove colunas indesejadas
+    colunas_excluir_existentes = [col for col in COLUNAS_PARA_EXCLUIR if col in df_limpo.columns]
+    df_limpo = df_limpo.drop(columns=colunas_excluir_existentes)
+
+    # Aplica o preenchimento seguro
+    for col, valor_preenchimento in PREENCHIMENTO_CATEGORICAS_CONHECIDAS.items():
+        if col in df_limpo.columns:
+            df_limpo[col] = df_limpo[col].fillna(valor_preenchimento)
+
+    
+    # condicao_outlier_area = df_limpo['GrLivArea'] > 4000
+    # df_limpo = df_limpo.drop(df_limpo[condicao_outlier_area].index)
+    
+    # COLUNAS_PARA_APLICAR_IQR = ['LotArea', 'TotalBsmtSF']
+   
+    # for col in COLUNAS_PARA_APLICAR_IQR:
+    #     Q1 = df_limpo[col].quantile(0.25)
+    #     Q3 = df_limpo[col].quantile(0.75)
+    #     IQR = Q3 - Q1
+        
+    #     limite_inferior = Q1 - 1.5 * IQR
+    #     limite_superior = Q3 + 1.5 * IQR
+        
+    #     # Mantém apenas quem está dentro dos limites ou é nulo (para ser tratado depois)
+    #     df_limpo = df_limpo[
+    #         (df_limpo[col] >= limite_inferior) & (df_limpo[col] <= limite_superior) | 
+    #         df_limpo[col].isnull()
+    #     ]
+        
+    ESTRATEGIAS_NUMERICAS_POR_COLUNA = {
+    'LotFrontage': 'mediana', 
+    'MasVnrArea': 'zero',     
+    'GarageYrBlt': 'zero'     
+    }
+
+    ESTRATEGIA_NUMERICA_PADRAO = 'mediana'
+    ESTRATEGIA_CATEGORICA_PADRAO = 'moda'
+    
+    todas_numericas = df_limpo.select_dtypes(include=[np.number]).columns.tolist()
+    todas_categoricas = df_limpo.select_dtypes(exclude=[np.number]).columns.tolist()
+
+    # Aplicar nas colunas NUMÉRICAS
+    for col in todas_numericas:
+        if df_limpo[col].isnull().sum() > 0:
+            estr = ESTRATEGIAS_NUMERICAS_POR_COLUNA.get(col, ESTRATEGIA_NUMERICA_PADRAO)
+            if estr == 'zero':
+                df_limpo[col] = df_limpo[col].fillna(0)
+            elif estr == 'media':
+                df_limpo[col] = df_limpo[col].fillna(df_limpo[col].mean())
+            elif estr == 'mediana':
+                df_limpo[col] = df_limpo[col].fillna(df_limpo[col].median())
+
+    # Aplicar nas colunas CATEGÓRICAS restantes
+    for col in todas_categoricas:
+        if df_limpo[col].isnull().sum() > 0:
+            if ESTRATEGIA_CATEGORICA_PADRAO == 'moda':
+                df_limpo[col] = df_limpo[col].fillna(df_limpo[col].mode()[0])
+            elif ESTRATEGIA_CATEGORICA_PADRAO == 'ausente':
+                df_limpo[col] = df_limpo[col].fillna('Ausente')
+    
+    target = 'SalePrice'
+    cols_num = [c for c in todas_numericas if c != target]
+    cols_cat = todas_categoricas
+
+    # --- VERSÃO 1: One-Hot Encoding ---
+    df_ohe = pd.get_dummies(df_limpo, columns=cols_cat, drop_first=True)
 
     # 2. Pré-processamento (Espelhando o treinamento do baseline)
     # Selecionar apenas colunas numéricas
-    X = df_teste.select_dtypes(include=[np.number])
+    # X = df_teste.select_dtypes(include=[np.number])
     
-    
-    cols_to_drop_2 = ['MasVnrArea', 'BsmtFinSF2', 'BsmtUnfSF', 'LowQualFinSF', 'BsmtHalfBath', 'HalfBath', 'BedroomAbvGr','KitchenAbvGr','GarageYrBlt','GarageArea','OpenPorchSF','MiscVal','MoSold','YrSold']
-    cols_to_drop = ['Alley', 'MasVnrType', 'FireplaceQu', 'PoolQC', 'Fence', 'MiscFeature']
-    
-    df_teste = limpar_dados(df_teste, cols_to_drop)
-    df_teste = limpar_dados(df_teste, cols_to_drop_2)
-    
-    # Remover coluna Id se ela estiver presente
-    if 'Id' in X.columns:
-        X = X.drop(columns=['Id'])
+    # # Remover coluna Id se ela estiver presente
+    # if 'Id' in X.columns:
+    #     X = X.drop(columns=['Id'])
         
     # # Preencher valores nulos com 0
-    # X = X.fillna(0)
+    # X = X.fillna(0) 
+    
+    X_final = df_ohe.copy()
+    if 'SalePrice' in X_final.columns:
+        X_final = df_ohe.drop(columns=['SalePrice'])
 
     # 3. Carregamento do modelo
-    caminho_modelo = 'modelo_baseline.joblib'
+    caminho_modelo = 'modelo_lasso_ohe.joblib'
     if not os.path.exists(caminho_modelo):
         raise FileNotFoundError(f"O arquivo do modelo '{caminho_modelo}' não foi encontrado na raiz do projeto.")
         
     modelo = joblib.load(caminho_modelo)
+    
+    caminho_scaler = 'scaler_lasso_ohe.joblib'
+
+    if not os.path.exists(caminho_scaler):
+        raise FileNotFoundError(
+            f"O arquivo do scaler '{caminho_scaler}' não foi encontrado."
+        )
+
+    scaler = joblib.load(caminho_scaler)
+
+    # # 4. Alinhamento de colunas (Garante consistência com o treino)
+    # if hasattr(modelo, 'feature_names_in_'):
+    #     X_final = X_final.reindex(columns=modelo.feature_names_in_, fill_value=0)
 
     # 4. Alinhamento de colunas (Garante consistência com o treino)
-    # if hasattr(modelo, 'feature_names_in_'):
-    #     X = X.reindex(columns=modelo.feature_names_in_, fill_value=0)
+    if hasattr(scaler, 'feature_names_in_'):
+        X_final = X_final.reindex(columns=scaler.feature_names_in_, fill_value=0)
 
+    
+    X_final = scaler.transform(X_final)
+    print(X_final.shape)
     # 5. Predição
-    predicoes = modelo.predict(X)
+    predicoes = modelo.predict(X_final)
 
     # 6. Pós-processamento
     # Garante valores >= 0 para evitar erro no cálculo do RMSLE
     predicoes_finais = np.clip(predicoes, a_min=0, a_max=None)
-    
-    
-    ### Sugestão
-    # # 4. Predição
-    # # O pipeline do Scikit-Learn aplica automaticamente a imputação, o scaler e o encoding
-    # predicoes_em_log = modelo_pipeline.predict(df_teste)
-
-    # # 5. Pós-processamento
-    # # O modelo foi treinado com o alvo em log (np.log1p). 
-    # # Precisamos converter de volta para Dólares usando a função exponencial.
-    # predicoes_em_dolar = np.expm1(predicoes_em_log)
-    
-    # # Garante valores >= 0 para evitar qualquer risco na métrica RMSLE
-    # predicoes_finais = np.clip(predicoes_em_dolar, a_min=0, a_max=None)
 
     return predicoes_finais
 
 if __name__ == "__main__":
     # Bloco de teste local para o aluno
+    # arquivo_teste_exemplo = './datasets/treino.csv'
     arquivo_teste_exemplo = './datasets/teste_publico.csv'
     
     print(f"--- Executando Validação Local do Pipeline ---")
