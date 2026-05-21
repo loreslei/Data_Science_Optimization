@@ -146,7 +146,8 @@ def prever_precos(caminho_arquivo_teste):
     print(X_final.shape)
     # 5. Predição
     predicoes = modelo.predict(X_final)
-
+    
+    predicoes = np.expm1(predicoes)
     # 6. Pós-processamento
     # Garante valores >= 0 para evitar erro no cálculo do RMSLE
     predicoes_finais = np.clip(predicoes, a_min=0, a_max=None)
